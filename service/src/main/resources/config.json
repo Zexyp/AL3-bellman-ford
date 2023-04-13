@@ -1,0 +1,7 @@
+{
+  "vertices": [
+    {"id": 1, "edges": [{"to": 2, "weight": 6}, {"to": 3, "weight": 7}]},
+    {"id": 2, "edges": []},
+    {"id": 3, "edges": [{"to": 2, "weight": -11}]}
+  ]
+}

@@ -11,7 +11,7 @@ public class BellmanFord {
         this.graph = graph;
         this.startVertex = startVertex;
         this.run(false);
-//        this.run(true);
+        this.run(true);
     }
 
     public void run(boolean detectNegativeLoops) {
@@ -19,6 +19,7 @@ public class BellmanFord {
 
         for(int i = 0; i < this.graph.keySet().size()-1; i++) { // Iterate through all vertices n-1 times
             for (Vertex v : this.graph.values()) {
+                if(v.getDistanceFromStart() == Integer.MAX_VALUE) continue; // If the vertex is unreachable yet, skip it
                 for (Edge e : v.getEdges()) {
                     Vertex target = this.graph.get(e.getTargetVertex());
                     if (target.getDistanceFromStart() > v.getDistanceFromStart() + e.getDistanceDifference()) { // If the new path is better than the old one
