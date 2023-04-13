@@ -22,13 +22,13 @@ public class SocketServer {
     public void start(int port) {
         try {
             while (true) {
-                serverSocket = new ServerSocket(port);
-                System.out.println("Server started");
-                clientSocket = serverSocket.accept();
-                out = new PrintWriter(clientSocket.getOutputStream(), true);
-                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-                String inputJson = in.readLine();
-//                String inputJson = "{\"start\": 0, \"vertices\":[{\"id\":1,\"edges\":[{\"to\":2,\"weight\":6},{\"to\":3,\"weight\":7}]},{\"id\":2,\"edges\":[]},{\"id\":3,\"edges\":[{\"to\":2,\"weight\":-11}]}]}";
+//                serverSocket = new ServerSocket(port);
+//                System.out.println("Server started");
+//                clientSocket = serverSocket.accept();
+//                out = new PrintWriter(clientSocket.getOutputStream(), true);
+//                in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+//                String inputJson = in.readLine();
+                String inputJson = "{\"start\":0,\"vertices\":[{\"id\":0,\"edges\":[{\"to\":3,\"weight\":-13},{\"to\":1,\"weight\":-5}]},{\"id\":1,\"edges\":[{\"to\":4,\"weight\":17}]},{\"id\":2,\"edges\":[{\"to\":5,\"weight\":40}]},{\"id\":3,\"edges\":[{\"to\":2,\"weight\":-26}]},{\"id\":4,\"edges\":[{\"to\":5,\"weight\":27}]},{\"id\":5,\"edges\":[]}]}";
 
                 System.out.println("INPUT DETECTED");
                 System.out.println(inputJson);
@@ -69,9 +69,9 @@ public class SocketServer {
                     }
                     resultsJson.put("vertices", resultsArray);
 
-                    out.println(resultsJson.toString());
                     System.out.println("RESULTS: ");
                     System.out.println(resultsJson.toString());
+                    out.println(resultsJson.toString());
 
                 } catch (Exception e) {
                     System.out.println(e.getMessage());
