@@ -8,4 +8,4 @@ Zpracovali (jména emailů):
 - `sprypa`
     - https://github.com/Zexyp
 - `tintvi`
-    - https://github.com/tintvi¨
+    - https://github.com/tintvi
