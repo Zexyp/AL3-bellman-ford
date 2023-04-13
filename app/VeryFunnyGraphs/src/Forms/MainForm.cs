@@ -24,24 +24,25 @@ namespace VeryFunnyGraphs.Forms
         }
 
         // visuals
-        readonly Size NODE_SIZE = new Size(32, 32);
+        private readonly Size NODE_SIZE = new Size(32, 32);
 
-        readonly Pen CONNECTION_ARROW_PEN;
-        readonly Pen CONNECTION_PEN = new Pen(Color.FromArgb(50, 50, 50), 2);
+        private readonly Pen CONNECTION_ARROW_PEN;
+        private readonly Pen CONNECTION_PEN = new Pen(Color.FromArgb(50, 50, 50), 2);
 
-        const int GRID_SPACING = 64;
-        readonly Pen GRID_PEN = new Pen(Color.FromArgb(32, 128, 128, 128), 1);
+        private const int GRID_SPACING = 64;
+        private readonly Pen GRID_PEN = new Pen(Color.FromArgb(32, 128, 128, 128), 1);
 
         // editor context
+        private Preferences preferences;
+        private Mode mode;
+
         private Point mouseDownLocation;
         private Button movingNode;
         private Point mouseLocation;
         private Point prevMouseMove;
         private Point gridOffset;
-        ToolTip[] toolTips = null;
-
-        Mode mode;
-        Preferences preferences;
+        
+        private ToolTip[] toolTips = null;
 
         // data
         GraphContainer<Button> graph = new GraphContainer<Button>();
@@ -56,6 +57,7 @@ namespace VeryFunnyGraphs.Forms
             preferences.host = "localhost";
             preferences.port = 6969;
 
+            // default garbage
             InitializeComponent();
 
             viewPanel.Paint += ViewPanel_Paint;
@@ -70,10 +72,12 @@ namespace VeryFunnyGraphs.Forms
             nodeListBox.DrawItem += NodeListBox_DrawItem;
             nodeListBox.SelectedValueChanged += NodeListBox_SelectedValueChanged;
             nodeListBox.DoubleClick += NodeListBox_DoubleClick;
+            nodeListBox.BackColor = BackColor;
 
-
+            // context
             moveToolStripMenuItem_Click(null, null);
 
+            // layout
             OnResize(null);
         }
 
@@ -167,6 +171,8 @@ namespace VeryFunnyGraphs.Forms
             {
                 graph.Vertices[i].Text = i.ToString();
             }
+
+            nodeListBox.Invalidate();
         }
 
         private void ConnectNodes(Button a, Button b)
@@ -212,6 +218,20 @@ namespace VeryFunnyGraphs.Forms
             }
         }
 
+        private void MarkStart(Button button)
+        {
+            for (int i = 0; i < graph.Vertices.Count; i++)
+            {
+                graph.Vertices[i].BackColor = BackColor;
+            }
+
+            ActiveControl.BackColor = Color.FromArgb(31, 179, 17);
+
+            graph.Start = button;
+
+            nodeListBox.Invalidate();
+        }
+
         #region Node List
         private void NodeListBox_DrawItem(object sender, DrawItemEventArgs e)
         {
@@ -220,8 +240,17 @@ namespace VeryFunnyGraphs.Forms
 
             e.DrawBackground();
 
+            var btn = (Button)nodeListBox.Items[e.Index];
+            string text = btn.Text;
+            int i = graph.Vertices.IndexOf(btn);
+
+            if (btn == graph.Start)
+                text += " (Start)";
+            else if (toolTips != null && toolTips[i] != null)
+                text += $" ({toolTips[i].GetToolTip(btn)})";
+
             using Brush brush = new SolidBrush(e.ForeColor);
-            e.Graphics.DrawString(graph.Vertices.IndexOf((Button)nodeListBox.Items[e.Index]).ToString(), e.Font, brush, e.Bounds);
+            e.Graphics.DrawString(text, e.Font, brush, e.Bounds);
 
             e.DrawFocusRectangle();
         }
@@ -458,6 +487,9 @@ namespace VeryFunnyGraphs.Forms
                 case Keys.X:
                     RemoveNode((Button)sender);
                     break;
+                case Keys.S:
+                    markStartToolStripMenuItem_Click(null, null);
+                    break;
             }
         }
 
@@ -571,18 +603,40 @@ namespace VeryFunnyGraphs.Forms
 
             ClearResult();
 
-            for (int i = 0; i < graph.Vertices.Count; i++)
+            MarkStart((Button)ActiveControl);
+        }
+
+        private void addToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            var funny = new Button();
+            funny.Location = new Point(viewPanel.Size) - NODE_SIZE / 2;
+            funny.Size = NODE_SIZE;
+            AddNode(funny);
+        }
+
+        private void removeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (!graph.Vertices.Contains(ActiveControl))
             {
-                graph.Vertices[i].BackColor = BackColor;
+                MessageBox.Show("No node selected.");
+                return;
             }
 
-            ActiveControl.BackColor = Color.FromArgb(0, 224, 0);
-
-            graph.Start = (Button)ActiveControl;
+            RemoveNode((Button)ActiveControl);
         }
         #endregion
 
         #region Main Tool Strip
+        private void importToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void exportToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
         private void preferencesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             PreferencesForm form = new PreferencesForm();
@@ -618,25 +672,33 @@ namespace VeryFunnyGraphs.Forms
                 using JsonDocument document = JsonDocument.Parse(response);
                 var root = document.RootElement;
                 var vertices = root.GetProperty("vertices");
-                toolTips = new ToolTip[vertices.GetArrayLength()];
-                int i = 0;
-                int step = 32;
+                toolTips = new ToolTip[graph.Vertices.Count];
+                int i = -1;
+                int step = 64;
                 foreach (var item in vertices.EnumerateArray())
                 {
                     int index = item.GetProperty("id").GetInt32();
                     int distance = item.GetProperty("distance").GetInt32();
                     bool cycle = item.GetProperty("isInNegativeLoop").GetBoolean();
+                    
+                    i++;
 
                     if (graph.Vertices[index] == graph.Start) continue;
 
                     graph.Vertices[index].BackColor = Color.FromArgb(Math.Clamp(distance * step, 127, 255), 191, Math.Clamp(distance * -step, 127, 255));
                     if (cycle)
-                        graph.Vertices[index].BackColor = Color.FromArgb(255, 58, 58);
+                        graph.Vertices[index].BackColor = Color.FromArgb(255, 58, 120);
+                    if (distance == int.MaxValue)
+                    {
+                        graph.Vertices[index].BackColor = Color.FromArgb(255, 100, 255);
+                        continue;
+                    }
 
                     toolTips[i] = new ToolTip();
                     toolTips[i].SetToolTip(graph.Vertices[index], $"Distance: {(cycle ? "-∞" : distance)}");
-                    i++;
                 }
+
+                RecalcNodes();
             }
             catch (KeyNotFoundException ex)
             {
