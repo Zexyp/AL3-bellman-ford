@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net;
@@ -28,8 +29,9 @@ namespace VeryFunnyGraphs.Forms
                 // invalid json payload to test the connection
                 MessageBox.Show(connector.Use(addressTextBox.Text, (int)portNumericUpDown.Value, "{\"test\":\"pp\"}"));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine(ex);
                 MessageBox.Show("What have you done?!");
                 return;
             }

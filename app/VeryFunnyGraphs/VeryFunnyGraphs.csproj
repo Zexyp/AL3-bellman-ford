@@ -22,4 +22,11 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <ItemGroup>
+    <ContentWithTargetPath Include="$(SolutionDir)\..\service\target\BFS.jar">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <TargetPath>BFS.jar</TargetPath>
+    </ContentWithTargetPath>
+  </ItemGroup>
+
 </Project>

@@ -24,14 +24,21 @@ namespace VeryFunnyGraphs.Forms
         }
 
         // visuals
-        readonly Size NODE_SIZE = new Size(40, 40);
-        readonly Pen PEN_LINES = new Pen(Brushes.DarkGray, 2);
+        readonly Size NODE_SIZE = new Size(32, 32);
+
+        readonly Pen CONNECTION_ARROW_PEN;
+        readonly Pen CONNECTION_PEN = new Pen(Color.FromArgb(50, 50, 50), 2);
+
+        const int GRID_SPACING = 64;
+        readonly Pen GRID_PEN = new Pen(Color.FromArgb(32, 128, 128, 128), 1);
 
         // editor context
         private Point mouseDownLocation;
         private Button movingNode;
         private Point mouseLocation;
         private Point prevMouseMove;
+        private Point gridOffset;
+        ToolTip[] toolTips = null;
 
         Mode mode;
         Preferences preferences;
@@ -41,7 +48,12 @@ namespace VeryFunnyGraphs.Forms
 
         public MainForm()
         {
-            preferences.host = "169.254.51.103";
+            // constants
+            CONNECTION_ARROW_PEN = (Pen)CONNECTION_PEN.Clone();
+            CONNECTION_ARROW_PEN.CustomEndCap = new AdjustableArrowCap(8, 8);
+
+            // preferences
+            preferences.host = "localhost";
             preferences.port = 6969;
 
             InitializeComponent();
@@ -59,47 +71,13 @@ namespace VeryFunnyGraphs.Forms
             nodeListBox.SelectedValueChanged += NodeListBox_SelectedValueChanged;
             nodeListBox.DoubleClick += NodeListBox_DoubleClick;
 
+
             moveToolStripMenuItem_Click(null, null);
+
+            OnResize(null);
         }
 
-        private void ViewPanel_DoubleClick(object sender, EventArgs e)
-        {
-            for (int i = 0; i < graph.Edges.Count; i++)
-            {
-                var edge = graph.Edges[i];
-                if (LineaIntersectio(viewPanel.PointToClient(MousePosition), edge.A.Location + NODE_SIZE / 2, edge.B.Location + NODE_SIZE / 2))
-                {
-                    graph.Disconnect(edge.A, edge.B);
-                    viewPanel.Invalidate();
-                    break;
-                }
-            }
-        }
-
-        private void ViewPanel_MouseWheel(object sender, MouseEventArgs e)
-        {
-            if (ModifierKeys != Keys.Control)
-                return;
-
-            for (int i = 0; i < graph.Edges.Count; i++)
-            {
-                var edge = graph.Edges[i];
-                if (LineaIntersectio(viewPanel.PointToClient(MousePosition), edge.A.Location + NODE_SIZE / 2, edge.B.Location + NODE_SIZE / 2))
-                {
-                    int delta = 0;
-                    if (e.Delta > 0)
-                        delta = 1;
-                    if (e.Delta < 0)
-                        delta = -1;
-                    edge.Weight += delta;
-                    break;
-                }
-            }
-
-            viewPanel.Invalidate();
-        }
-
-        private bool LineaIntersectio(PointF point, PointF l1, PointF l2)
+        private static bool LineaIntersectio(PointF point, PointF l1, PointF l2)
         {
             float minimum_distance(Vector2 v, Vector2 w, Vector2 p)
             {
@@ -118,12 +96,123 @@ namespace VeryFunnyGraphs.Forms
             return minimum_distance(new Vector2(l1.X, l1.Y), new Vector2(l2.X, l2.Y), new Vector2(point.X, point.Y)) <= 8;
         }
 
-        private void ViewPanel_Click(object sender, EventArgs e)
+        public static void SetDoubleBuffered(Control c)
         {
-            ActiveControl = viewPanel;
-            nodeListBox.ClearSelected();
+            PropertyInfo prop = typeof(Control).GetProperty("DoubleBuffered", BindingFlags.NonPublic | BindingFlags.Instance);
+            prop.SetValue(c, true);
         }
 
+        protected override void OnResize(EventArgs e)
+        {
+            base.OnResize(e);
+
+            viewPanel.Size = this.ClientSize - new Size(viewPanel.Location);
+            nodeListBox.Location = new Point(viewPanel.ClientSize.Width - nodeListBox.Width, editorMenuStrip.Bottom);
+            nodeListBox.Height = viewPanel.ClientSize.Height;
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (ViewPanel_KeyInput(keyData))
+                return true;
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        private void AddNode(Button node)
+        {
+            ClearResult();
+
+            node.Click += Node_Click;
+            node.MouseMove += NodeMove_MouseMove;
+            node.MouseDown += NodeMove_MouseDown;
+            node.MouseUp += NodeMove_MouseUp;
+            node.PreviewKeyDown += Node_PreviewKeyDown;
+            node.Paint += Node_Paint;
+            viewPanel.Controls.Add(node);
+            graph.AddVertex(node);
+
+            nodeListBox.Items.Add(node);
+
+            viewPanel.Invalidate();
+
+            RecalcNodes();
+        }
+
+        private void RemoveNode(Button node)
+        {
+            ClearResult();
+
+            node.Click -= Node_Click;
+            node.MouseMove -= NodeMove_MouseMove;
+            node.MouseDown -= NodeMove_MouseDown;
+            node.MouseUp -= NodeMove_MouseUp;
+            node.PreviewKeyDown -= Node_PreviewKeyDown;
+            node.Paint -= Node_Paint;
+            viewPanel.Controls.Remove(node);
+            graph.RemoveVertex(node);
+
+            nodeListBox.Items.Remove(node);
+
+            node.Dispose();
+
+            viewPanel.Invalidate();
+
+            RecalcNodes();
+        }
+
+        private void RecalcNodes()
+        {
+            for (int i = 0; i < graph.Vertices.Count; i++)
+            {
+                graph.Vertices[i].Text = i.ToString();
+            }
+        }
+
+        private void ConnectNodes(Button a, Button b)
+        {
+            ClearResult();
+
+            if (graph.ContainsEdge(a, b))
+                graph.Disconnect(a, b);
+            graph.Connect(a, b);
+        }
+
+        private void MoveView(Size delta)
+        {
+            for (int i = 0; i < graph.Vertices.Count; i++)
+            {
+                graph.Vertices[i].Location += delta;
+            }
+
+            gridOffset += delta;
+            gridOffset = new Point(gridOffset.X % GRID_SPACING, gridOffset.Y % GRID_SPACING);
+
+            viewPanel.Invalidate();
+            viewPanel.Update();
+        }
+
+        private void ClearResult()
+        {
+            if (toolTips == null)
+                return;
+
+            for (int i = 0; i < toolTips.Length; i++)
+            {
+                toolTips[i]?.Dispose();
+                toolTips[i] = null;
+                    
+            }
+            toolTips = null;
+
+            for (int i = 0; i < graph.Vertices.Count; i++)
+            {
+                if (graph.Vertices[i] != graph.Start)
+                    graph.Vertices[i].BackColor = BackColor;
+            }
+        }
+
+        #region Node List
         private void NodeListBox_DrawItem(object sender, DrawItemEventArgs e)
         {
             if (e.Index < 0)
@@ -155,46 +244,18 @@ namespace VeryFunnyGraphs.Forms
             MoveView(delta);
             NodeListBox_SelectedValueChanged(sender, e);
         }
+        #endregion
 
-        public static void SetDoubleBuffered(Control c)
-        {
-            PropertyInfo prop = typeof(Control).GetProperty("DoubleBuffered", BindingFlags.NonPublic | BindingFlags.Instance);
-            prop.SetValue(c, true);
-        }
-
-        private void ViewPanel_Paint(object sender, PaintEventArgs e)
-        {
-            var g = e.Graphics;
-            g.SmoothingMode = SmoothingMode.AntiAlias;
-
-            using var ellipseBrush = new SolidBrush(BackColor);
-            for (int i = 0; i < graph.Edges.Count; i++)
-            {
-                var edge = graph.Edges[i];
-                g.DrawLine(PEN_LINES, edge.A.Location + NODE_SIZE / 2, edge.B.Location + NODE_SIZE / 2);
-
-                var mid = new Point(new Size(edge.A.Location + new Size(edge.B.Location)) / 2);
-                string title = edge.Weight.ToString();
-                var titleSize = g.MeasureString(title, Font);
-                var ellipseSize = new SizeF(Math.Max(titleSize.Width, titleSize.Height), Math.Max(titleSize.Width, titleSize.Height));
-                var titlePos = new PointF(mid.X, mid.Y) - titleSize / 2 + NODE_SIZE / 2;
-                var ellipsePos = new PointF(mid.X, mid.Y) - ellipseSize / 2 + NODE_SIZE / 2;
-
-                g.FillEllipse(ellipseBrush, new RectangleF(ellipsePos, ellipseSize));
-
-                g.DrawString(title, Font, Brushes.Black, titlePos);
-            }
-
-            if (mode == Mode.Connect && movingNode != null)
-            {
-                g.DrawLine(PEN_LINES, movingNode.Location + NODE_SIZE / 2, mouseLocation);
-            }
-        }
-
-        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        #region View Panel
+        private bool ViewPanel_KeyInput(Keys keyData)
         {
             if (keyData == Keys.Enter)
-                MessageBox.Show(graph.Dump());
+            {
+                var dump = graph.Dump();
+                Clipboard.SetText(dump);
+                MessageBox.Show(dump);
+                return true;
+            }
 
             int moveDist = 32;
 
@@ -249,7 +310,101 @@ namespace VeryFunnyGraphs.Forms
                 }
             }
 
-            return base.ProcessCmdKey(ref msg, keyData);
+            return false;
+        }
+
+        private void ViewPanel_Paint(object sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            g.SmoothingMode = SmoothingMode.AntiAlias;
+
+            for (int y = 0; y < viewPanel.Height; y += GRID_SPACING)
+            {
+                g.DrawLine(GRID_PEN, new Point(0, y + gridOffset.Y), new Point(viewPanel.Width, y + gridOffset.Y));
+            }
+            for (int x = 0; x < viewPanel.Width; x += GRID_SPACING)
+            {
+                g.DrawLine(GRID_PEN, new Point(x + gridOffset.X, 0), new Point(x + gridOffset.X, viewPanel.Height));
+            }
+
+            using var ellipseBrush = new SolidBrush(BackColor);
+            for (int i = 0; i < graph.Edges.Count; i++)
+            {
+                var edge = graph.Edges[i];
+                var edgeStart = edge.A.Location + NODE_SIZE / 2;
+                var edgeEnd = edge.B.Location + NODE_SIZE / 2;
+
+                //Vector2 vecArrowEnd = new Vector2(edgeEnd.X - edgeStart.X, edgeEnd.Y - edgeStart.Y);
+                //vecArrowEnd = Vector2.Normalize(vecArrowEnd) * 64;
+                //var edgeArrowEnd = new PointF(vecArrowEnd.X + edgeStart.X, vecArrowEnd.Y + edgeStart.Y);
+
+                var edgeDelta = new Point(edgeEnd.X - edgeStart.X, edgeEnd.Y - edgeStart.Y);
+                var edgeArrowEnd = new Point(edgeDelta.X / 3 + edgeStart.X, edgeDelta.Y / 3 + edgeStart.Y);
+
+                g.DrawLine(CONNECTION_ARROW_PEN, edgeStart, edgeArrowEnd);
+                g.DrawLine(CONNECTION_PEN, edgeArrowEnd, edgeEnd);
+
+                var mid = new Point(new Size(edge.A.Location + new Size(edge.B.Location)) / 2);
+                string title = edge.Weight.ToString();
+                var titleSize = g.MeasureString(title, Font);
+                var ellipseSize = new SizeF(Math.Max(titleSize.Width, titleSize.Height), Math.Max(titleSize.Width, titleSize.Height));
+                var titlePos = new PointF(mid.X, mid.Y) - titleSize / 2 + NODE_SIZE / 2;
+                var ellipsePos = new PointF(mid.X, mid.Y) - ellipseSize / 2 + NODE_SIZE / 2;
+
+                g.FillEllipse(ellipseBrush, new RectangleF(ellipsePos, ellipseSize));
+
+                g.DrawString(title, Font, Brushes.Black, titlePos);
+            }
+
+            if (mode == Mode.Connect && movingNode != null)
+            {
+                g.DrawLine(CONNECTION_PEN, movingNode.Location + NODE_SIZE / 2, mouseLocation);
+            }
+        }
+
+        private void ViewPanel_DoubleClick(object sender, EventArgs e)
+        {
+            for (int i = 0; i < graph.Edges.Count; i++)
+            {
+                var edge = graph.Edges[i];
+                if (LineaIntersectio(viewPanel.PointToClient(MousePosition), edge.A.Location + NODE_SIZE / 2, edge.B.Location + NODE_SIZE / 2))
+                {
+                    graph.Disconnect(edge.A, edge.B);
+                    viewPanel.Invalidate();
+                    break;
+                }
+            }
+        }
+
+        private void ViewPanel_MouseWheel(object sender, MouseEventArgs e)
+        {
+            if (ModifierKeys != Keys.Control)
+                return;
+
+            for (int i = 0; i < graph.Edges.Count; i++)
+            {
+                var edge = graph.Edges[i];
+                if (LineaIntersectio(viewPanel.PointToClient(MousePosition), edge.A.Location + NODE_SIZE / 2, edge.B.Location + NODE_SIZE / 2))
+                {
+                    int delta = 0;
+                    if (e.Delta > 0)
+                        delta = 1;
+                    if (e.Delta < 0)
+                        delta = -1;
+                    edge.Weight += delta;
+
+                    ClearResult();
+                    break;
+                }
+            }
+
+            viewPanel.Invalidate();
+        }
+
+        private void ViewPanel_Click(object sender, EventArgs e)
+        {
+            ActiveControl = viewPanel;
+            nodeListBox.ClearSelected();
         }
 
         private void ViewPanel_MouseDown(object sender, MouseEventArgs e)
@@ -275,6 +430,36 @@ namespace VeryFunnyGraphs.Forms
 
             MoveView(delta);
         }
+        #endregion
+
+        #region Node
+        private void Node_Paint(object sender, PaintEventArgs e)
+        {
+            var g = e.Graphics;
+            var button = ((Button)sender);
+            using var backBrush = new SolidBrush(button.BackColor);
+            using var foreBrush = new SolidBrush(button.ForeColor);
+            var border = 4;
+            g.FillRectangle(backBrush, new Rectangle(new Point(border, border), new Size(button.Width - border * 2, button.Height - border * 2)));
+            var measure = g.MeasureString(button.Text, Font);
+            var startPoint = new PointF(button.Width / 2, button.Height / 2) - new SizeF(measure.Width / 2, measure.Height / 2);
+            g.DrawString(button.Text, Font, foreBrush, startPoint);
+        }
+
+        private void Node_Click(object sender, EventArgs e)
+        {
+            nodeListBox.SetSelected(nodeListBox.Items.IndexOf(sender), true);
+        }
+
+        private void Node_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        {
+            switch (e.KeyData)
+            {
+                case Keys.X:
+                    RemoveNode((Button)sender);
+                    break;
+            }
+        }
 
         private void NodeMove_MouseUp(object sender, MouseEventArgs e)
         {
@@ -293,8 +478,7 @@ namespace VeryFunnyGraphs.Forms
 
                     if (tmp == leftOn || tmp == null || leftOn == null) break;
 
-                    if (!graph.ContainsEdge(tmp, leftOn))
-                        graph.Connect(tmp, leftOn);
+                    ConnectNodes(tmp, leftOn);
 
                     break;
                 default:
@@ -350,86 +534,9 @@ namespace VeryFunnyGraphs.Forms
                     break;
             }
         }
-
-        private void Node_Click(object sender, EventArgs e)
-        {
-            nodeListBox.SetSelected(nodeListBox.Items.IndexOf(sender), true);
-        }
-
-        private void Node_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
-        {
-            switch (e.KeyData)
-            {
-                case Keys.X:
-                    RemoveNode((Button)sender);
-                    break;
-            }
-        }
-
-        protected override void OnResize(EventArgs e)
-        {
-            base.OnResize(e);
-
-            viewPanel.Size = this.ClientSize - new Size(viewPanel.Location);
-            nodeListBox.Location = new Point(viewPanel.ClientSize.Width - nodeListBox.Width, editorMenuStrip.Bottom);
-            nodeListBox.Height = viewPanel.ClientSize.Height;
-        }
-
-        private void AddNode(Button node)
-        {
-            node.Click += Node_Click;
-            node.MouseMove += NodeMove_MouseMove;
-            node.MouseDown += NodeMove_MouseDown;
-            node.MouseUp += NodeMove_MouseUp;
-            node.PreviewKeyDown += Node_PreviewKeyDown;
-            viewPanel.Controls.Add(node);
-            graph.AddVertex(node);
-
-            nodeListBox.Items.Add(node);
-
-            viewPanel.Invalidate();
-
-            RecalcNodes();
-        }
-
-        private void RemoveNode(Button node)
-        {
-            node.Click -= Node_Click;
-            node.MouseMove -= NodeMove_MouseMove;
-            node.MouseDown -= NodeMove_MouseDown;
-            node.MouseUp -= NodeMove_MouseUp;
-            node.PreviewKeyDown += Node_PreviewKeyDown;
-            viewPanel.Controls.Remove(node);
-            graph.RemoveVertex(node);
-
-            nodeListBox.Items.Remove(node);
-
-            node.Dispose();
-
-            viewPanel.Invalidate();
-
-            RecalcNodes();
-        }
-
-        private void RecalcNodes()
-        {
-            for (int i = 0; i < graph.Vertices.Count; i++)
-            {
-                graph.Vertices[i].Text = i.ToString();
-            }
-        }
-
-        private void MoveView(Size delta)
-        {
-            for (int i = 0; i < graph.Vertices.Count; i++)
-            {
-                graph.Vertices[i].Location += delta;
-            }
-
-            viewPanel.Invalidate();
-            viewPanel.Update();
-        }
-
+        #endregion
+        
+        #region Editor Tool Strip
         private void moveToolStripMenuItem_Click(object sender, EventArgs e)
         {
             mode = Mode.Move;
@@ -454,13 +561,6 @@ namespace VeryFunnyGraphs.Forms
                 RemoveNode(graph.Vertices[0]);
         }
 
-        private void preferencesToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            PreferencesForm form = new PreferencesForm();
-            if (form.Edit(preferences, out var result))
-                preferences = result;
-        }
-
         private void markStartToolStripMenuItem_Click(object sender, EventArgs e)
         {
             if (!graph.Vertices.Contains(ActiveControl))
@@ -469,14 +569,25 @@ namespace VeryFunnyGraphs.Forms
                 return;
             }
 
+            ClearResult();
+
             for (int i = 0; i < graph.Vertices.Count; i++)
             {
-                graph.Vertices[i].UseVisualStyleBackColor = true;
+                graph.Vertices[i].BackColor = BackColor;
             }
 
-            ActiveControl.BackColor = Color.LightGreen;
+            ActiveControl.BackColor = Color.FromArgb(0, 224, 0);
 
             graph.Start = (Button)ActiveControl;
+        }
+        #endregion
+
+        #region Main Tool Strip
+        private void preferencesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            PreferencesForm form = new PreferencesForm();
+            if (form.Edit(preferences, out var result))
+                preferences = result;
         }
 
         private void solveToolStripMenuItem_Click(object sender, EventArgs e)
@@ -487,14 +598,17 @@ namespace VeryFunnyGraphs.Forms
                 return;
             }
 
+            ClearResult();
+
             string response;
             try
             {
                 Connector connector = new Connector();
                 response = connector.Use(preferences.host, preferences.port, graph.Dump());
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Debug.WriteLine(ex);
                 MessageBox.Show("Attmept to process data failed.");
                 return;
             }
@@ -503,13 +617,35 @@ namespace VeryFunnyGraphs.Forms
             {
                 using JsonDocument document = JsonDocument.Parse(response);
                 var root = document.RootElement;
+                var vertices = root.GetProperty("vertices");
+                toolTips = new ToolTip[vertices.GetArrayLength()];
+                int i = 0;
+                int step = 32;
+                foreach (var item in vertices.EnumerateArray())
+                {
+                    int index = item.GetProperty("id").GetInt32();
+                    int distance = item.GetProperty("distance").GetInt32();
+                    bool cycle = item.GetProperty("isInNegativeLoop").GetBoolean();
+
+                    if (graph.Vertices[index] == graph.Start) continue;
+
+                    graph.Vertices[index].BackColor = Color.FromArgb(Math.Clamp(distance * step, 127, 255), 191, Math.Clamp(distance * -step, 127, 255));
+                    if (cycle)
+                        graph.Vertices[index].BackColor = Color.FromArgb(255, 58, 58);
+
+                    toolTips[i] = new ToolTip();
+                    toolTips[i].SetToolTip(graph.Vertices[index], $"Distance: {(cycle ? "-∞" : distance)}");
+                    i++;
+                }
             }
-            catch (KeyNotFoundException)
+            catch (KeyNotFoundException ex)
             {
+                Debug.WriteLine(ex);
                 MessageBox.Show("Processing results failed.");
                 return;
             }
         }
+        #endregion
     }
 
     public struct Preferences

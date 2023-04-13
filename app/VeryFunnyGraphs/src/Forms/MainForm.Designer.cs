@@ -57,18 +57,20 @@ namespace VeryFunnyGraphs.Forms
             // 
             this.viewPanel.Controls.Add(this.nodeListBox);
             this.viewPanel.Controls.Add(this.editorMenuStrip);
-            this.viewPanel.Location = new System.Drawing.Point(0, 31);
+            this.viewPanel.Location = new System.Drawing.Point(0, 23);
+            this.viewPanel.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.viewPanel.Name = "viewPanel";
-            this.viewPanel.Size = new System.Drawing.Size(800, 219);
+            this.viewPanel.Size = new System.Drawing.Size(700, 164);
             this.viewPanel.TabIndex = 2;
             // 
             // nodeListBox
             // 
             this.nodeListBox.FormattingEnabled = true;
-            this.nodeListBox.ItemHeight = 20;
-            this.nodeListBox.Location = new System.Drawing.Point(650, 31);
+            this.nodeListBox.ItemHeight = 15;
+            this.nodeListBox.Location = new System.Drawing.Point(569, 23);
+            this.nodeListBox.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.nodeListBox.Name = "nodeListBox";
-            this.nodeListBox.Size = new System.Drawing.Size(150, 104);
+            this.nodeListBox.Size = new System.Drawing.Size(132, 79);
             this.nodeListBox.TabIndex = 2;
             // 
             // editorMenuStrip
@@ -79,8 +81,9 @@ namespace VeryFunnyGraphs.Forms
             this.nodeToolStripMenuItem});
             this.editorMenuStrip.Location = new System.Drawing.Point(0, 0);
             this.editorMenuStrip.Name = "editorMenuStrip";
+            this.editorMenuStrip.Padding = new System.Windows.Forms.Padding(5, 2, 0, 2);
             this.editorMenuStrip.RenderMode = System.Windows.Forms.ToolStripRenderMode.System;
-            this.editorMenuStrip.Size = new System.Drawing.Size(800, 28);
+            this.editorMenuStrip.Size = new System.Drawing.Size(700, 24);
             this.editorMenuStrip.TabIndex = 1;
             // 
             // modeToolStripMenuItem
@@ -89,20 +92,20 @@ namespace VeryFunnyGraphs.Forms
             this.moveToolStripMenuItem,
             this.connectToolStripMenuItem});
             this.modeToolStripMenuItem.Name = "modeToolStripMenuItem";
-            this.modeToolStripMenuItem.Size = new System.Drawing.Size(62, 24);
+            this.modeToolStripMenuItem.Size = new System.Drawing.Size(50, 20);
             this.modeToolStripMenuItem.Text = "Mode";
             // 
             // moveToolStripMenuItem
             // 
             this.moveToolStripMenuItem.Name = "moveToolStripMenuItem";
-            this.moveToolStripMenuItem.Size = new System.Drawing.Size(146, 26);
+            this.moveToolStripMenuItem.Size = new System.Drawing.Size(119, 22);
             this.moveToolStripMenuItem.Text = "Move";
             this.moveToolStripMenuItem.Click += new System.EventHandler(this.moveToolStripMenuItem_Click);
             // 
             // connectToolStripMenuItem
             // 
             this.connectToolStripMenuItem.Name = "connectToolStripMenuItem";
-            this.connectToolStripMenuItem.Size = new System.Drawing.Size(146, 26);
+            this.connectToolStripMenuItem.Size = new System.Drawing.Size(119, 22);
             this.connectToolStripMenuItem.Text = "Connect";
             this.connectToolStripMenuItem.Click += new System.EventHandler(this.connectToolStripMenuItem_Click);
             // 
@@ -113,25 +116,25 @@ namespace VeryFunnyGraphs.Forms
             this.toolStripMenuItem1,
             this.clearAllToolStripMenuItem});
             this.nodeToolStripMenuItem.Name = "nodeToolStripMenuItem";
-            this.nodeToolStripMenuItem.Size = new System.Drawing.Size(60, 24);
+            this.nodeToolStripMenuItem.Size = new System.Drawing.Size(48, 20);
             this.nodeToolStripMenuItem.Text = "Node";
             // 
             // markStartToolStripMenuItem
             // 
             this.markStartToolStripMenuItem.Name = "markStartToolStripMenuItem";
-            this.markStartToolStripMenuItem.Size = new System.Drawing.Size(160, 26);
+            this.markStartToolStripMenuItem.Size = new System.Drawing.Size(128, 22);
             this.markStartToolStripMenuItem.Text = "Mark Start";
             this.markStartToolStripMenuItem.Click += new System.EventHandler(this.markStartToolStripMenuItem_Click);
             // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(157, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(125, 6);
             // 
             // clearAllToolStripMenuItem
             // 
             this.clearAllToolStripMenuItem.Name = "clearAllToolStripMenuItem";
-            this.clearAllToolStripMenuItem.Size = new System.Drawing.Size(160, 26);
+            this.clearAllToolStripMenuItem.Size = new System.Drawing.Size(128, 22);
             this.clearAllToolStripMenuItem.Text = "Clear All";
             this.clearAllToolStripMenuItem.Click += new System.EventHandler(this.clearToolStripMenuItem_Click);
             // 
@@ -144,8 +147,9 @@ namespace VeryFunnyGraphs.Forms
             this.runToolStripMenuItem});
             this.mainMenuStrip.Location = new System.Drawing.Point(0, 0);
             this.mainMenuStrip.Name = "mainMenuStrip";
+            this.mainMenuStrip.Padding = new System.Windows.Forms.Padding(5, 2, 0, 2);
             this.mainMenuStrip.RenderMode = System.Windows.Forms.ToolStripRenderMode.System;
-            this.mainMenuStrip.Size = new System.Drawing.Size(800, 28);
+            this.mainMenuStrip.Size = new System.Drawing.Size(984, 24);
             this.mainMenuStrip.TabIndex = 0;
             // 
             // fileToolStripMenuItem
@@ -154,19 +158,19 @@ namespace VeryFunnyGraphs.Forms
             this.saveAsToolStripMenuItem,
             this.openToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(46, 24);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
             // 
             // saveAsToolStripMenuItem
             // 
             this.saveAsToolStripMenuItem.Name = "saveAsToolStripMenuItem";
-            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(137, 26);
+            this.saveAsToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
             this.saveAsToolStripMenuItem.Text = "Import";
             // 
             // openToolStripMenuItem
             // 
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(137, 26);
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(110, 22);
             this.openToolStripMenuItem.Text = "Export";
             // 
             // editToolStripMenuItem
@@ -174,13 +178,13 @@ namespace VeryFunnyGraphs.Forms
             this.editToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.preferencesToolStripMenuItem});
             this.editToolStripMenuItem.Name = "editToolStripMenuItem";
-            this.editToolStripMenuItem.Size = new System.Drawing.Size(49, 24);
+            this.editToolStripMenuItem.Size = new System.Drawing.Size(39, 20);
             this.editToolStripMenuItem.Text = "Edit";
             // 
             // preferencesToolStripMenuItem
             // 
             this.preferencesToolStripMenuItem.Name = "preferencesToolStripMenuItem";
-            this.preferencesToolStripMenuItem.Size = new System.Drawing.Size(168, 26);
+            this.preferencesToolStripMenuItem.Size = new System.Drawing.Size(135, 22);
             this.preferencesToolStripMenuItem.Text = "Preferences";
             this.preferencesToolStripMenuItem.Click += new System.EventHandler(this.preferencesToolStripMenuItem_Click);
             // 
@@ -189,24 +193,25 @@ namespace VeryFunnyGraphs.Forms
             this.runToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.solveToolStripMenuItem});
             this.runToolStripMenuItem.Name = "runToolStripMenuItem";
-            this.runToolStripMenuItem.Size = new System.Drawing.Size(48, 24);
+            this.runToolStripMenuItem.Size = new System.Drawing.Size(40, 20);
             this.runToolStripMenuItem.Text = "Run";
             // 
             // solveToolStripMenuItem
             // 
             this.solveToolStripMenuItem.Name = "solveToolStripMenuItem";
-            this.solveToolStripMenuItem.Size = new System.Drawing.Size(224, 26);
+            this.solveToolStripMenuItem.Size = new System.Drawing.Size(102, 22);
             this.solveToolStripMenuItem.Text = "Solve";
             this.solveToolStripMenuItem.Click += new System.EventHandler(this.solveToolStripMenuItem_Click);
             // 
             // MainForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 20F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(984, 581);
             this.Controls.Add(this.mainMenuStrip);
             this.Controls.Add(this.viewPanel);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "MainForm";
             this.Text = "Funny";
             this.viewPanel.ResumeLayout(false);
