@@ -495,7 +495,7 @@ namespace VeryFunnyGraphs.Forms
             }
             catch (Exception)
             {
-                MessageBox.Show("Something went wrong while processing data.");
+                MessageBox.Show("Attmept to process data failed.");
                 return;
             }
 
@@ -506,7 +506,7 @@ namespace VeryFunnyGraphs.Forms
             }
             catch (KeyNotFoundException)
             {
-                MessageBox.Show("Something went wrong while processing result.");
+                MessageBox.Show("Processing results failed.");
                 return;
             }
         }
