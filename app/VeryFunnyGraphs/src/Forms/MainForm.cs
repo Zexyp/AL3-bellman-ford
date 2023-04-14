@@ -120,6 +120,12 @@ namespace VeryFunnyGraphs.Forms
             if (ViewPanel_KeyInput(keyData))
                 return true;
 
+            if (keyData == Keys.F5)
+            {
+                solveToolStripMenuItem_Click(null, null);
+                return true;
+            }
+
             return base.ProcessCmdKey(ref msg, keyData);
         }
 
