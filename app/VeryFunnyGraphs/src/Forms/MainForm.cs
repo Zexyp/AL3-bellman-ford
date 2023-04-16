@@ -393,7 +393,7 @@ namespace VeryFunnyGraphs.Forms
 
             if (mode == Mode.Connect && movingNode != null)
             {
-                g.DrawLine(CONNECTION_PEN, movingNode.Location + NODE_SIZE / 2, mouseLocation);
+                g.DrawLine(CONNECTION_ARROW_PEN, movingNode.Location + NODE_SIZE / 2, mouseLocation);
             }
         }
 
